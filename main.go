@@ -90,32 +90,26 @@ func test()  {
 
 func addTx() (uint64,error){
 
-	clientHttp := &http.Client{}
-	reqest, _ := http.NewRequest("GET", addTxUrl, nil)
-
-	var err error
-	_, err = clientHttp.Do(reqest)
+	resp, err :=http.Get(addTxUrl)
 
 	if err != nil {
 		fmt.Printf("error : %s",err)
 		return 0,err
 	}
+	defer resp.Body.Close()
 
 	return 0,nil
 }
 
 func unlock() (uint64,error) {
 
-	clientHttp := &http.Client{}
-	reqest, _ := http.NewRequest("GET", unlockUrl, nil)
-
-	var err error
-	_, err = clientHttp.Do(reqest)
+	resp, err :=http.Get(unlockUrl)
 
 	if err != nil {
 		fmt.Printf("error : %s",err)
 		return 0,err
 	}
+	defer resp.Body.Close()
 
 	return 0,nil
 }
@@ -126,6 +120,7 @@ func getTxCounts() (int64,error) {
 	reqest, _ := http.NewRequest("GET", getTxCountsUrl, nil)
 
 	resp, err := clientHttp.Do(reqest)
+	defer resp.Body.Close()
 
 	if err != nil {
 		fmt.Printf("error : %s",err)
