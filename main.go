@@ -22,7 +22,7 @@ func main()  {
 	//Env config start
 	startTestNet()
 
-	time.Sleep(time.Minute * 20)
+	time.Sleep(time.Minute * 10)
 	//Env config end
 
 	unlock()
@@ -53,7 +53,7 @@ func main()  {
 		fmt.Printf("div time : %d",endTime - startTime)
 
 		resultCount, _ := getTxCounts()
-		totalSendCount := initCount + 40000
+		totalSendCount := initCount + 4000
 
 		if totalSendCount-resultCount < 1000 {
 			fmt.Printf("tps: %d 通过了验证", initTps)
