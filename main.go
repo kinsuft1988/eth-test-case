@@ -14,7 +14,7 @@ var (
 	addTxUrl       = baseUrl + "/addOneTx"
 	unlockUrl      = baseUrl + "/unlock"
 	getTxCountsUrl = baseUrl + "/getTxCounts"
-	testNetUrl     = "http://192.168.31.246:8080/job/eth-test-net/build?token=eth-test-net?branch="
+	testNetUrl     = "http://192.168.31.246:8080/job/eth-test-net/buildWithParameters?token=eth-test-net"
 	branches       = []string{"bloc-test-hard-10"}
 )
 
@@ -140,8 +140,8 @@ func getTxCounts() (int64, error) {
 func startTestNet(branch string) (uint64, error) {
 
 	clientHttp := &http.Client{}
-	testNetUrl += branch
-	reqest, _ := http.NewRequest("GET", testNetUrl, nil)
+
+	reqest, _ := http.NewRequest("POST", testNetUrl, nil)
 	reqest.SetBasicAuth("blockcloud", "blockcloud2018")
 	var err error
 	_, err = clientHttp.Do(reqest)
