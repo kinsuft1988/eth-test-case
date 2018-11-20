@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	baseUrl           = "http://127.0.0.1:3001"
+	baseUrl           = "http://192.168.31.246:3001"
 	addTxUrl          = baseUrl + "/addOneTx"
 	unlockUrl         = baseUrl + "/unlock"
 	getTxCountsUrl    = baseUrl + "/getTxCounts"
@@ -31,9 +31,9 @@ func main() {
 		//Env config start
 		println(index)
 		println(branch)
-		//startTestNet(branch,nodeNumbers[index])
+		startTestNet(branch,nodeNumbers[index])
 
-		//time.Sleep(time.Minute * 7)
+		time.Sleep(time.Minute * 7)
 		//Env config end
 
 		unlock()
@@ -48,7 +48,7 @@ func main() {
 
 		for initTps := 10; initTps < 15; initTps += 5 {
 
-			for i := 0; i < 400; i++ {
+			for i := 0; i < 4000; i++ {
 
 				time.Sleep(time.Millisecond * time.Duration(1000/initTps))
 
@@ -65,7 +65,7 @@ func main() {
 			resultCount, _ := getTxCounts()
 			totalSendCount := initCount + 4000
 
-			if totalSendCount-resultCount < -1 {
+			if totalSendCount-resultCount < 200 {
 				fmt.Printf("tps: %d 通过了验证", initTps)
 				time.Sleep(time.Second * 20)
 			} else {
