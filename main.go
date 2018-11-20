@@ -74,12 +74,16 @@ func main() {
 					report := blocReport.Report{}
 					report.SendMail(resultMsg)
 
+					break
+
 				} else {
 					fmt.Printf("最终的tps结果低于10")
 
 					resultMsg := fmt.Sprintf("最终的tps结果低于10")
 					report := blocReport.Report{}
 					report.SendMail(resultMsg)
+
+					break
 				}
 
 			}
