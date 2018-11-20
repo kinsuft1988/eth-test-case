@@ -3,6 +3,7 @@ package main
 import (
 	"bitbucket.org/oudmondev/ethereum-test/report"
 	"fmt"
+	"github.com/bndr/gojenkins"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -10,12 +11,15 @@ import (
 )
 
 var (
-	baseUrl        = "http://192.168.31.246:3001"
-	addTxUrl       = baseUrl + "/addOneTx"
-	unlockUrl      = baseUrl + "/unlock"
-	getTxCountsUrl = baseUrl + "/getTxCounts"
-	testNetUrl     = "http://192.168.31.246:8080/job/eth-test-net/buildWithParameters?token=eth-test-net"
-	branches       = []string{"bloc-test-hard-10"}
+	baseUrl           = "http://192.168.31.246:3001"
+	addTxUrl          = baseUrl + "/addOneTx"
+	unlockUrl         = baseUrl + "/unlock"
+	getTxCountsUrl    = baseUrl + "/getTxCounts"
+	jenkinsUrl        = "http://192.168.31.246:8080/"
+	jenkinsUser       = "blockcloud"
+	jenkinsPassword   = "blockcloud2018"
+	jenkinsTestNetJob = "eth-test-net"
+	branches          = []string{"bloc-test-hard-5","bloc-test-hard-10"}
 )
 
 func main() {
@@ -25,7 +29,7 @@ func main() {
 		//Env config start
 		startTestNet(branch)
 
-		time.Sleep(time.Minute * 10)
+		time.Sleep(time.Minute * 7)
 		//Env config end
 
 		unlock()
@@ -57,7 +61,7 @@ func main() {
 			resultCount, _ := getTxCounts()
 			totalSendCount := initCount + 4000
 
-			if totalSendCount-resultCount < 400 {
+			if totalSendCount-resultCount < 200 {
 				fmt.Printf("tps: %d 通过了验证", initTps)
 				time.Sleep(time.Second * 20)
 			} else {
@@ -139,17 +143,18 @@ func getTxCounts() (int64, error) {
 
 func startTestNet(branch string) (uint64, error) {
 
-	clientHttp := &http.Client{}
-
-	reqest, _ := http.NewRequest("POST", testNetUrl, nil)
-	reqest.SetBasicAuth("blockcloud", "blockcloud2018")
-	var err error
-	_, err = clientHttp.Do(reqest)
+	jenkins := gojenkins.CreateJenkins(nil, jenkinsUrl, jenkinsUser, jenkinsPassword)
+	_, err := jenkins.Init()
 
 	if err != nil {
 		fmt.Printf("error : %s", err)
 		return 0, err
 	}
+
+	params := make(map[string]string)
+	params["branch"] = branch
+
+	jenkins.BuildJob(jenkinsTestNetJob, params)
 
 	return 0, nil
 }
