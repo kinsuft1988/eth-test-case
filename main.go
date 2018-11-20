@@ -11,25 +11,29 @@ import (
 )
 
 var (
-	baseUrl           = "http://192.168.31.246:3001"
+	baseUrl           = "http://127.0.0.1:3001"
 	addTxUrl          = baseUrl + "/addOneTx"
 	unlockUrl         = baseUrl + "/unlock"
 	getTxCountsUrl    = baseUrl + "/getTxCounts"
+	getAvgBlockUrl    = baseUrl + "/getArverageBlockTime"
 	jenkinsUrl        = "http://192.168.31.246:8080/"
 	jenkinsUser       = "blockcloud"
 	jenkinsPassword   = "blockcloud2018"
 	jenkinsTestNetJob = "eth-test-net"
 	branches          = []string{"bloc-test-hard-5","bloc-test-hard-10"}
+	nodeNumbers       = []int{3,3}
 )
 
 func main() {
 
-	for _, branch := range branches {
+	for index, branch := range branches {
 
 		//Env config start
-		startTestNet(branch)
+		println(index)
+		println(branch)
+		//startTestNet(branch,nodeNumbers[index])
 
-		time.Sleep(time.Minute * 7)
+		//time.Sleep(time.Minute * 7)
 		//Env config end
 
 		unlock()
@@ -42,9 +46,9 @@ func main() {
 
 		startTime := time.Now().Unix()
 
-		for initTps := 10; initTps < 100; initTps += 5 {
+		for initTps := 10; initTps < 15; initTps += 5 {
 
-			for i := 0; i < 4000; i++ {
+			for i := 0; i < 400; i++ {
 
 				time.Sleep(time.Millisecond * time.Duration(1000/initTps))
 
@@ -61,7 +65,7 @@ func main() {
 			resultCount, _ := getTxCounts()
 			totalSendCount := initCount + 4000
 
-			if totalSendCount-resultCount < 200 {
+			if totalSendCount-resultCount < -1 {
 				fmt.Printf("tps: %d 通过了验证", initTps)
 				time.Sleep(time.Second * 20)
 			} else {
@@ -70,7 +74,9 @@ func main() {
 				if initTps != 10 {
 					fmt.Printf("最终的tps结果为%d", initTps-5)
 
-					resultMsg := fmt.Sprintf("最终的tps结果为%d", initTps-5)
+					avgTime,_:= getAvgBlockTime()
+
+					resultMsg := fmt.Sprintf("最终的tps结果为%d ,环境 branch:%s nodeNumber:%d,avgTime:%f", initTps-5,branch,nodeNumbers[index],avgTime)
 					report := blocReport.Report{}
 					report.SendMail(resultMsg)
 
@@ -79,7 +85,9 @@ func main() {
 				} else {
 					fmt.Printf("最终的tps结果低于10")
 
-					resultMsg := fmt.Sprintf("最终的tps结果低于10")
+					avgTime,_:= getAvgBlockTime()
+
+					resultMsg := fmt.Sprintf("最终的tps结果低于10,环境 branch:%s nodeNumber:%d,avgTime:%f",branch,nodeNumbers[index],avgTime)
 					report := blocReport.Report{}
 					report.SendMail(resultMsg)
 
@@ -91,11 +99,6 @@ func main() {
 
 	}
 
-}
-
-func test() {
-	report := blocReport.Report{}
-	report.SendMail("test")
 }
 
 func addTx() (uint64, error) {
@@ -145,7 +148,29 @@ func getTxCounts() (int64, error) {
 	return result, nil
 }
 
-func startTestNet(branch string) (uint64, error) {
+func getAvgBlockTime() (float64, error) {
+
+	clientHttp := &http.Client{}
+	reqest, _ := http.NewRequest("GET", getAvgBlockUrl, nil)
+
+	resp, err := clientHttp.Do(reqest)
+	defer resp.Body.Close()
+
+	if err != nil {
+		fmt.Printf("error : %s", err)
+		return 0, err
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+
+	str := string(body[:])
+	println("str:",str)
+	result, _ := strconv.ParseFloat(str, 64)
+
+	return result, nil
+}
+
+func startTestNet(branch string,nodeNumber int) (uint64, error) {
 
 	jenkins := gojenkins.CreateJenkins(nil, jenkinsUrl, jenkinsUser, jenkinsPassword)
 	_, err := jenkins.Init()
@@ -157,6 +182,7 @@ func startTestNet(branch string) (uint64, error) {
 
 	params := make(map[string]string)
 	params["branch"] = branch
+	params["nodeNumber"] = string(nodeNumber)
 
 	jenkins.BuildJob(jenkinsTestNetJob, params)
 
