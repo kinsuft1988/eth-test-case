@@ -229,9 +229,9 @@ func startTestNet(branch string, nodeNumber int) (uint64, error) {
 		return 0, err
 	}
 
-	params := make(map[string]interface{})
+	params := make(map[string]string)
 	params["branch"] = branch
-	params["nodeNumber"] = nodeNumber
+	//params["nodeNumber"] = nodeNumber
 
 	jenkins.BuildJob(jenkinsTestNetJob, params)
 
