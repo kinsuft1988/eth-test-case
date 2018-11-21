@@ -40,6 +40,8 @@ func main() {
 		println(branch)
 		startTestNet(branch, nodeNumbers[index])
 
+		time.Sleep(time.Second * 10)
+
 		for {
 
 			number, _ := getBlockNumber()
@@ -47,6 +49,8 @@ func main() {
 			if number > 0 {
 				break
 			}
+
+			time.Sleep(time.Second * 10)
 
 		}
 		//Env config end
