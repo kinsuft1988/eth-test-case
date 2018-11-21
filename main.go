@@ -30,6 +30,8 @@ var (
 
 func main() {
 
+	println("test.")
+
 	for index, branch := range branches {
 
 		//Env config start
