@@ -1,13 +1,13 @@
 package main
 
 import (
-	"bitbucket.org/oudmondev/ethereum-test/report"
 	"fmt"
 	"github.com/bndr/gojenkins"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
+	"bitbucket.org/oudmondev/ethereum-test/report"
 )
 
 var (
@@ -27,11 +27,10 @@ var (
 	testTxToleranceNumber     = int64(1000)
 	oneCaseWaitTimeForStatics = 10
 	oneCaseWaitTime           = 20
+	resultMsgArray            = []string{}
 )
 
 func main() {
-
-	println("test.")
 
 	for index, branch := range branches {
 
@@ -50,7 +49,7 @@ func main() {
 				break
 			}
 
-			time.Sleep(time.Second * 10)
+			time.Sleep(time.Second * 5)
 
 		}
 		//Env config end
@@ -65,63 +64,44 @@ func main() {
 
 		startTime := time.Now().Unix()
 
-		for initTps := 10; initTps < 200; initTps += 5 {
 
-			for i := int64(0); i < testTxTotalNumber; i++ {
+		for i := int64(0); i < testTxTotalNumber; i++ {
 
-				time.Sleep(time.Millisecond * time.Duration(1000/initTps))
+			time.Sleep(time.Millisecond * time.Duration(10))
 
-				go addTx()
+			go addTx()
 
-			}
+		}
 
-			time.Sleep(time.Second * time.Duration(oneCaseWaitTimeForStatics))
+		for {
+			time.Sleep(time.Second * 3)
+			endCount, _ := getTxCounts()
 
-			endTime := time.Now().Unix()
+			fmt.Printf("endCount : %d", endCount)
 
-			fmt.Printf("div time : %d", endTime-startTime)
+			if initCount + testTxTotalNumber - endCount  < testTxToleranceNumber{
+				endTime := time.Now().Unix()
+				tps := (endCount - initCount)/(endTime-startTime)
 
-			resultCount, _ := getTxCounts()
-			totalSendCount := initCount + testTxTotalNumber
+				avgTime, _ := getAvgBlockTime()
 
-			if totalSendCount-resultCount < testTxToleranceNumber {
-				fmt.Printf("tps: %d 通过了验证", initTps)
-				time.Sleep(time.Second * time.Duration(oneCaseWaitTime))
-			} else {
-				fmt.Printf("tps: %d 没有通过验证，还有%d的交易没有处理", initTps, totalSendCount-resultCount)
+				resultMsg := fmt.Sprintf("最终的tps结果为%d ,环境 branch:%s nodeNumber:%d,avgTime:%f\n", tps, branch, nodeNumbers[index], avgTime)
+				resultMsg += fmt.Sprintf("testTxTotalNumber: %d \n", testTxTotalNumber)
+				resultMsg += fmt.Sprintf("testTxToleranceNumber: %d \n", testTxToleranceNumber)
+				resultMsg += fmt.Sprintf("oneCaseWaitTimeForStatics: %d \n", oneCaseWaitTimeForStatics)
+				resultMsg += fmt.Sprintf("oneCaseWaitTime: %d \n", oneCaseWaitTime)
+				report := blocReport.Report{}
+				report.SendMail(resultMsg)
 
-				if initTps != 10 {
-					fmt.Printf("最终的tps结果为%d", initTps-5)
+				resultMsgArray = append(resultMsgArray,resultMsg)
 
-					avgTime, _ := getAvgBlockTime()
-
-					resultMsg := fmt.Sprintf("最终的tps结果为%d ,环境 branch:%s nodeNumber:%d,avgTime:%f\n", initTps-5, branch, nodeNumbers[index], avgTime)
-					resultMsg += fmt.Sprintf("testTxTotalNumber: %d \n", testTxTotalNumber)
-					resultMsg += fmt.Sprintf("testTxToleranceNumber: %d \n", testTxToleranceNumber)
-					resultMsg += fmt.Sprintf("oneCaseWaitTimeForStatics: %d \n", oneCaseWaitTimeForStatics)
-					resultMsg += fmt.Sprintf("oneCaseWaitTime: %d \n", oneCaseWaitTime)
-					report := blocReport.Report{}
-					report.SendMail(resultMsg)
-
-					break
-
-				} else {
-					fmt.Printf("最终的tps结果低于10")
-
-					avgTime, _ := getAvgBlockTime()
-
-					resultMsg := fmt.Sprintf("最终的tps结果低于10,环境 branch:%s nodeNumber:%d,avgTime:%f", branch, nodeNumbers[index], avgTime)
-					resultMsg += fmt.Sprintf("testTxTotalNumber: %d \n", testTxTotalNumber)
-					resultMsg += fmt.Sprintf("testTxToleranceNumber: %d \n", testTxToleranceNumber)
-					resultMsg += fmt.Sprintf("oneCaseWaitTimeForStatics: %d \n", oneCaseWaitTimeForStatics)
-					resultMsg += fmt.Sprintf("oneCaseWaitTime: %d \n", oneCaseWaitTime)
-					report := blocReport.Report{}
-					report.SendMail(resultMsg)
-
-					break
+				for _,msg := range resultMsgArray {
+					fmt.Printf(msg)
 				}
 
+				return
 			}
+
 		}
 
 	}
@@ -191,7 +171,7 @@ func getBlockNumber() (float64, error) {
 	body, err := ioutil.ReadAll(resp.Body)
 
 	str := string(body[:])
-	println("str:", str)
+	fmt.Printf("str:%s",str)
 	result, _ := strconv.ParseFloat(str, 64)
 
 	return result, nil
@@ -213,7 +193,6 @@ func getAvgBlockTime() (float64, error) {
 	body, err := ioutil.ReadAll(resp.Body)
 
 	str := string(body[:])
-	println("str:", str)
 	result, _ := strconv.ParseFloat(str, 64)
 
 	return result, nil
