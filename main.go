@@ -11,21 +11,22 @@ import (
 )
 
 var (
-	baseUrl           = "http://192.168.31.246:3001"
-	addTxUrl          = baseUrl + "/addOneTx"
-	unlockUrl         = baseUrl + "/unlock"
-	getTxCountsUrl    = baseUrl + "/getTxCounts"
-	getAvgBlockUrl    = baseUrl + "/getArverageBlockTime"
-	jenkinsUrl        = "http://192.168.31.246:8080/"
-	jenkinsUser       = "blockcloud"
-	jenkinsPassword   = "blockcloud2018"
-	jenkinsTestNetJob = "eth-test-net"
-	branches          = []string{"bloc-test-hard-5","bloc-test-hard-10"}
-	nodeNumbers       = []int{1,1}
-	testTxTotalNumber = int64(400)
-	testTxToleranceNumber = int64(10)
+	baseUrl                   = "http://192.168.31.246:3001"
+	addTxUrl                  = baseUrl + "/addOneTx"
+	unlockUrl                 = baseUrl + "/unlock"
+	getTxCountsUrl            = baseUrl + "/getTxCounts"
+	getAvgBlockUrl            = baseUrl + "/getArverageBlockTime"
+	getBlockNumberUrl         = baseUrl + "/getBlockNumber"
+	jenkinsUrl                = "http://192.168.31.246:8080/"
+	jenkinsUser               = "blockcloud"
+	jenkinsPassword           = "blockcloud2018"
+	jenkinsTestNetJob         = "eth-test-net"
+	branches                  = []string{"bloc-test-hard-5", "bloc-test-hard-10"}
+	nodeNumbers               = []int{1, 1}
+	testTxTotalNumber         = int64(40000)
+	testTxToleranceNumber     = int64(1000)
 	oneCaseWaitTimeForStatics = 10
-	oneCaseWaitTime = 20
+	oneCaseWaitTime           = 20
 )
 
 func main() {
@@ -37,9 +38,17 @@ func main() {
 		//Env config start
 		println(index)
 		println(branch)
-		startTestNet(branch,nodeNumbers[index])
+		startTestNet(branch, nodeNumbers[index])
 
-		time.Sleep(time.Minute * 7)
+		for {
+
+			number, _ := getBlockNumber()
+
+			if number > 0 {
+				break
+			}
+
+		}
 		//Env config end
 
 		unlock()
@@ -80,13 +89,13 @@ func main() {
 				if initTps != 10 {
 					fmt.Printf("最终的tps结果为%d", initTps-5)
 
-					avgTime,_:= getAvgBlockTime()
+					avgTime, _ := getAvgBlockTime()
 
-					resultMsg := fmt.Sprintf("最终的tps结果为%d ,环境 branch:%s nodeNumber:%d,avgTime:%f\n", initTps-5,branch,nodeNumbers[index],avgTime)
-					resultMsg += fmt.Sprintf("testTxTotalNumber: %d \n",testTxTotalNumber)
-					resultMsg += fmt.Sprintf("testTxToleranceNumber: %d \n",testTxToleranceNumber)
-					resultMsg += fmt.Sprintf("oneCaseWaitTimeForStatics: %d \n",oneCaseWaitTimeForStatics)
-					resultMsg += fmt.Sprintf("oneCaseWaitTime: %d \n",oneCaseWaitTime)
+					resultMsg := fmt.Sprintf("最终的tps结果为%d ,环境 branch:%s nodeNumber:%d,avgTime:%f\n", initTps-5, branch, nodeNumbers[index], avgTime)
+					resultMsg += fmt.Sprintf("testTxTotalNumber: %d \n", testTxTotalNumber)
+					resultMsg += fmt.Sprintf("testTxToleranceNumber: %d \n", testTxToleranceNumber)
+					resultMsg += fmt.Sprintf("oneCaseWaitTimeForStatics: %d \n", oneCaseWaitTimeForStatics)
+					resultMsg += fmt.Sprintf("oneCaseWaitTime: %d \n", oneCaseWaitTime)
 					report := blocReport.Report{}
 					report.SendMail(resultMsg)
 
@@ -95,13 +104,13 @@ func main() {
 				} else {
 					fmt.Printf("最终的tps结果低于10")
 
-					avgTime,_:= getAvgBlockTime()
+					avgTime, _ := getAvgBlockTime()
 
-					resultMsg := fmt.Sprintf("最终的tps结果低于10,环境 branch:%s nodeNumber:%d,avgTime:%f",branch,nodeNumbers[index],avgTime)
-					resultMsg += fmt.Sprintf("testTxTotalNumber: %d \n",testTxTotalNumber)
-					resultMsg += fmt.Sprintf("testTxToleranceNumber: %d \n",testTxToleranceNumber)
-					resultMsg += fmt.Sprintf("oneCaseWaitTimeForStatics: %d \n",oneCaseWaitTimeForStatics)
-					resultMsg += fmt.Sprintf("oneCaseWaitTime: %d \n",oneCaseWaitTime)
+					resultMsg := fmt.Sprintf("最终的tps结果低于10,环境 branch:%s nodeNumber:%d,avgTime:%f", branch, nodeNumbers[index], avgTime)
+					resultMsg += fmt.Sprintf("testTxTotalNumber: %d \n", testTxTotalNumber)
+					resultMsg += fmt.Sprintf("testTxToleranceNumber: %d \n", testTxToleranceNumber)
+					resultMsg += fmt.Sprintf("oneCaseWaitTimeForStatics: %d \n", oneCaseWaitTimeForStatics)
+					resultMsg += fmt.Sprintf("oneCaseWaitTime: %d \n", oneCaseWaitTime)
 					report := blocReport.Report{}
 					report.SendMail(resultMsg)
 
@@ -162,6 +171,28 @@ func getTxCounts() (int64, error) {
 	return result, nil
 }
 
+func getBlockNumber() (float64, error) {
+
+	clientHttp := &http.Client{}
+	reqest, _ := http.NewRequest("GET", getBlockNumberUrl, nil)
+
+	resp, err := clientHttp.Do(reqest)
+	defer resp.Body.Close()
+
+	if err != nil {
+		fmt.Printf("error : %s", err)
+		return 0, err
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+
+	str := string(body[:])
+	println("str:", str)
+	result, _ := strconv.ParseFloat(str, 64)
+
+	return result, nil
+}
+
 func getAvgBlockTime() (float64, error) {
 
 	clientHttp := &http.Client{}
@@ -178,13 +209,13 @@ func getAvgBlockTime() (float64, error) {
 	body, err := ioutil.ReadAll(resp.Body)
 
 	str := string(body[:])
-	println("str:",str)
+	println("str:", str)
 	result, _ := strconv.ParseFloat(str, 64)
 
 	return result, nil
 }
 
-func startTestNet(branch string,nodeNumber int) (uint64, error) {
+func startTestNet(branch string, nodeNumber int) (uint64, error) {
 
 	jenkins := gojenkins.CreateJenkins(nil, jenkinsUrl, jenkinsUser, jenkinsPassword)
 	_, err := jenkins.Init()
@@ -194,9 +225,9 @@ func startTestNet(branch string,nodeNumber int) (uint64, error) {
 		return 0, err
 	}
 
-	params := make(map[string]string)
+	params := make(map[string]interface{})
 	params["branch"] = branch
-	params["nodeNumber"] = string(nodeNumber)
+	params["nodeNumber"] = nodeNumber
 
 	jenkins.BuildJob(jenkinsTestNetJob, params)
 
