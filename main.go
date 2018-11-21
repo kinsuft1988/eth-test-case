@@ -21,7 +21,11 @@ var (
 	jenkinsPassword   = "blockcloud2018"
 	jenkinsTestNetJob = "eth-test-net"
 	branches          = []string{"bloc-test-hard-5","bloc-test-hard-10"}
-	nodeNumbers       = []int{3,3}
+	nodeNumbers       = []int{1,1}
+	testTxTotalNumber = int64(400)
+	testTxToleranceNumber = int64(10)
+	oneCaseWaitTimeForStatics = 10
+	oneCaseWaitTime = 20
 )
 
 func main() {
@@ -46,9 +50,9 @@ func main() {
 
 		startTime := time.Now().Unix()
 
-		for initTps := 10; initTps < 15; initTps += 5 {
+		for initTps := 10; initTps < 200; initTps += 5 {
 
-			for i := 0; i < 4000; i++ {
+			for i := int64(0); i < testTxTotalNumber; i++ {
 
 				time.Sleep(time.Millisecond * time.Duration(1000/initTps))
 
@@ -56,18 +60,18 @@ func main() {
 
 			}
 
-			time.Sleep(time.Second * 10)
+			time.Sleep(time.Second * time.Duration(oneCaseWaitTimeForStatics))
 
 			endTime := time.Now().Unix()
 
 			fmt.Printf("div time : %d", endTime-startTime)
 
 			resultCount, _ := getTxCounts()
-			totalSendCount := initCount + 4000
+			totalSendCount := initCount + testTxTotalNumber
 
-			if totalSendCount-resultCount < 200 {
+			if totalSendCount-resultCount < testTxToleranceNumber {
 				fmt.Printf("tps: %d 通过了验证", initTps)
-				time.Sleep(time.Second * 20)
+				time.Sleep(time.Second * time.Duration(oneCaseWaitTime))
 			} else {
 				fmt.Printf("tps: %d 没有通过验证，还有%d的交易没有处理", initTps, totalSendCount-resultCount)
 
@@ -76,7 +80,11 @@ func main() {
 
 					avgTime,_:= getAvgBlockTime()
 
-					resultMsg := fmt.Sprintf("最终的tps结果为%d ,环境 branch:%s nodeNumber:%d,avgTime:%f", initTps-5,branch,nodeNumbers[index],avgTime)
+					resultMsg := fmt.Sprintf("最终的tps结果为%d ,环境 branch:%s nodeNumber:%d,avgTime:%f\n", initTps-5,branch,nodeNumbers[index],avgTime)
+					resultMsg += fmt.Sprintf("testTxTotalNumber: %d \n",testTxTotalNumber)
+					resultMsg += fmt.Sprintf("testTxToleranceNumber: %d \n",testTxToleranceNumber)
+					resultMsg += fmt.Sprintf("oneCaseWaitTimeForStatics: %d \n",oneCaseWaitTimeForStatics)
+					resultMsg += fmt.Sprintf("oneCaseWaitTime: %d \n",oneCaseWaitTime)
 					report := blocReport.Report{}
 					report.SendMail(resultMsg)
 
@@ -88,6 +96,10 @@ func main() {
 					avgTime,_:= getAvgBlockTime()
 
 					resultMsg := fmt.Sprintf("最终的tps结果低于10,环境 branch:%s nodeNumber:%d,avgTime:%f",branch,nodeNumbers[index],avgTime)
+					resultMsg += fmt.Sprintf("testTxTotalNumber: %d \n",testTxTotalNumber)
+					resultMsg += fmt.Sprintf("testTxToleranceNumber: %d \n",testTxToleranceNumber)
+					resultMsg += fmt.Sprintf("oneCaseWaitTimeForStatics: %d \n",oneCaseWaitTimeForStatics)
+					resultMsg += fmt.Sprintf("oneCaseWaitTime: %d \n",oneCaseWaitTime)
 					report := blocReport.Report{}
 					report.SendMail(resultMsg)
 
