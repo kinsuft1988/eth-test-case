@@ -40,7 +40,7 @@ func main() {
 		println(branch)
 		startTestNet(branch, nodeNumbers[index])
 
-		time.Sleep(time.Second * 10)
+		time.Sleep(time.Minute * 2)
 
 		for {
 
