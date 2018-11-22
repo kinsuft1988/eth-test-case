@@ -1,13 +1,13 @@
 package main
 
 import (
+	"bitbucket.org/oudmondev/ethereum-test/report"
 	"fmt"
 	"github.com/bndr/gojenkins"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
-	"bitbucket.org/oudmondev/ethereum-test/report"
 )
 
 var (
@@ -21,10 +21,10 @@ var (
 	jenkinsUser               = "blockcloud"
 	jenkinsPassword           = "blockcloud2018"
 	jenkinsTestNetJob         = "eth-test-net"
-	branches                  = []string{"bloc-test-hard-5", "bloc-test-hard-10"}
-	nodeNumbers               = []int{1, 1}
-	testTxTotalNumber         = int64(40000)
-	testTxToleranceNumber     = int64(1000)
+	branches                  = []string{"bloc-test-hard-5"}
+	nodeNumbers               = []int{1}
+	testTxTotalNumber         = int64(100000)
+	testTxToleranceNumber     = int64(200)
 	oneCaseWaitTimeForStatics = 10
 	oneCaseWaitTime           = 20
 	resultMsgArray            = []string{}
@@ -64,10 +64,9 @@ func main() {
 
 		startTime := time.Now().Unix()
 
-
 		for i := int64(0); i < testTxTotalNumber; i++ {
 
-			time.Sleep(time.Millisecond * time.Duration(10))
+			time.Sleep(time.Millisecond * time.Duration(15))
 
 			go addTx()
 
@@ -79,9 +78,9 @@ func main() {
 
 			fmt.Printf("endCount : %d", endCount)
 
-			if initCount + testTxTotalNumber - endCount  < testTxToleranceNumber{
+			if initCount+testTxTotalNumber-endCount < testTxToleranceNumber {
 				endTime := time.Now().Unix()
-				tps := (endCount - initCount)/(endTime-startTime)
+				tps := (endCount - initCount) / (endTime - startTime)
 
 				avgTime, _ := getAvgBlockTime()
 
@@ -93,9 +92,9 @@ func main() {
 				report := blocReport.Report{}
 				report.SendMail(resultMsg)
 
-				resultMsgArray = append(resultMsgArray,resultMsg)
+				resultMsgArray = append(resultMsgArray, resultMsg)
 
-				for _,msg := range resultMsgArray {
+				for _, msg := range resultMsgArray {
 					fmt.Printf(msg)
 				}
 
@@ -171,7 +170,7 @@ func getBlockNumber() (float64, error) {
 	body, err := ioutil.ReadAll(resp.Body)
 
 	str := string(body[:])
-	fmt.Printf("str:%s",str)
+	fmt.Printf("str:%s", str)
 	result, _ := strconv.ParseFloat(str, 64)
 
 	return result, nil
@@ -193,6 +192,7 @@ func getAvgBlockTime() (float64, error) {
 	body, err := ioutil.ReadAll(resp.Body)
 
 	str := string(body[:])
+	fmt.Printf("str:%s", str)
 	result, _ := strconv.ParseFloat(str, 64)
 
 	return result, nil
