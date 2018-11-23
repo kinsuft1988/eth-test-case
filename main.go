@@ -21,9 +21,9 @@ var (
 	jenkinsUser               = "blockcloud"
 	jenkinsPassword           = "blockcloud2018"
 	jenkinsTestNetJob         = "eth-test-net"
-	branches                  = []string{"bloc-test-hard-5"}
+	branches                  = []string{"bloc-test-hard-10-246"}
 	nodeNumbers               = []int{1}
-	testTxTotalNumber         = int64(100000)
+	testTxTotalNumber         = int64(10000)
 	testTxToleranceNumber     = int64(200)
 	oneCaseWaitTimeForStatics = 10
 	oneCaseWaitTime           = 20
@@ -37,7 +37,7 @@ func main() {
 		//Env config start
 		println(index)
 		println(branch)
-		startTestNet(branch, nodeNumbers[index])
+		//startTestNet(branch, nodeNumbers[index])
 
 		time.Sleep(time.Minute * 2)
 
